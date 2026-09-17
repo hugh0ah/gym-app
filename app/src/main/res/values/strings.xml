@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">FitTracker</string>
+    <string name="nav_dashboard">Hoy</string>
+    <string name="nav_routine">Rutina</string>
+    <string name="nav_food">Comidas</string>
+    <string name="nav_assistant">Asistente IA</string>
+</resources>

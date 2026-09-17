@@ -1,0 +1,10 @@
+## This file must *NOT* be checked into Version Control Systems,
+# as it contains information specific to your local configuration.
+#
+# Location of the SDK. This is only used by Gradle.
+# For customization when using a Version Control System, please read the
+# header note.
+# sdk.dir=C\:\\Users\\USERNAME\\AppData\\Local\\Android\\Sdk
+#
+# Gemini API Key for multimodal vision (Huawei Watch screenshot parsing) & AI assistant function calling
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
