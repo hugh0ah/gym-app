@@ -2,64 +2,75 @@ package com.fittracker.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Fondos oscuros ultra-modernos
-val DarkBg = Color(0xFF090D16)
-val DarkSurface = Color(0xFF131927)
-val DarkSurfaceVariant = Color(0xFF1F293D)
-val DarkSurfaceCard = Color(0xFF151D2F)
-val DarkGlassBorder = Color(0xFF2E3D5B)
+// ==========================================
+// PALETA DARK MODE PREMIUM - FitDay Elite
+// Estilo Hevy / RP Hypertrophy / Symmetry
+// ==========================================
 
-// Gradientes y acentos de neón
-val PrimaryIndigo = Color(0xFF6366F1)
-val PrimaryIndigoLight = Color(0xFF818CF8)
-val PrimaryIndigoDark = Color(0xFF4F46E5)
-val SecondaryEmerald = Color(0xFF10B981)
-val SecondaryEmeraldLight = Color(0xFF34D399)
-val AccentCyan = Color(0xFF38BDF8)
-val AccentPink = Color(0xFFEC4899)
+// Fondos oscuros de alto contraste (OLED / Obsidian)
+val DarkBg = Color(0xFF0A0D14)           // Fondo principal ultra oscuro
+val DarkSurface = Color(0xFF131824)      // Superficie de tarjetas principales
+val DarkSurfaceVariant = Color(0xFF1A2130) // Superficie secundaria / contenedores
+val DarkSurfaceElevated = Color(0xFF222B3D) // Diálogos y hojas flotantes
+val DarkCardBorder = Color(0xFF253046)   // Bordes sutiles tipo glassmorphism
+val DarkCardBorderSubtle = Color(0x333D4F72)
 
-// Métricas de salud y fitness
-val CalorieOrange = Color(0xFFF97316)
-val BurnedRed = Color(0xFFEF4444)
-val ProteinBlue = Color(0xFF38BDF8)
-val CarbsYellow = Color(0xFFFBBF24)
-val FatPurple = Color(0xFFA855F7)
-val StepsTeal = Color(0xFF14B8A6)
-val WeightViolet = Color(0xFF8B5CF6)
+// Acentos de Alto Rendimiento
+val NeonMint = Color(0xFF00E676)         // Verde neón acción completada, MEV
+val NeonMintLight = Color(0xFF69F0AE)
+val NeonMintDark = Color(0xFF00B0FF)
+val ElectricCyan = Color(0xFF00E5FF)     // Cian eléctrico: métricas, simetría, MAV
+val ElectricCyanLight = Color(0xFF80D8FF)
+val AthleticOrange = Color(0xFFFF6D00)   // Naranja atlético: entrenos en vivo, fuego
+val AthleticOrangeLight = Color(0xFFFF9E80)
+val AlertRed = Color(0xFFFF334B)         // Rojo alerta: fallo muscular, MRV límite
+val CyberViolet = Color(0xFFA855F7)      // Violeta: récords personales (PRs), drop sets
+val CyberVioletLight = Color(0xFFC084FC)
 
-// Paleta de Estilo Modern Wellness (Light Mode con fondo crema suave)
-val CreamBg = Color(0xFFFBF8F3)          // Soft cream background
-val CreamBgWarm = Color(0xFFF7F3EB)      // Warm cream for subtle sections
-val CreamSurface = Color(0xFFFFFFFF)     // Pure white rounded cards
-val CreamSurfaceVariant = Color(0xFFF4EFE7)
-val CreamBorder = Color(0xFFECE4D8)      // Subtle warm card borders
-val CreamShadow = Color(0x14000000)
+// Métricas de Salud y Nutrición
+val CalorieOrange = Color(0xFFFF7A00)
+val BurnedRed = Color(0xFFFF3D57)
+val ProteinBlue = Color(0xFF00B0FF)
+val CarbsYellow = Color(0xFFFFC107)
+val FatPurple = Color(0xFFB388FF)
+val WaterBlue = Color(0xFF00E5FF)
+val StepsTeal = Color(0xFF1DE9B6)
+val WeightViolet = Color(0xFFB388FF)
 
-// Acentos principales: Coral energético y Azul Eléctrico para gráficas
-val AccentCoral = Color(0xFFFF5757)      // Coral primary accent color
-val AccentCoralLight = Color(0xFFFF7575)
-val AccentCoralDark = Color(0xFFE54343)
-val AccentCoralContainer = Color(0xFFFFF1F0)
+// Gradientes y Estados
+val SuccessGreen = Color(0xFF00E676)
+val WarningAmber = Color(0xFFFFB300)
+val ErrorRed = Color(0xFFFF334B)
 
-val ElectricBlue = Color(0xFF0A84FF)     // Electric blue for charts and highlights
-val ElectricBlueLight = Color(0xFF3DA3FF)
-val ElectricBlueDark = Color(0xFF0066D6)
-val ElectricBlueContainer = Color(0xFFEDF5FF)
+// Tipografía de Alto Contraste en Modo Oscuro
+val TextWhite = Color(0xFFF8FAFC)        // Texto de máxima jerarquía
+val TextLight = Color(0xFFE2E8F0)        // Texto primario
+val TextMuted = Color(0xFF94A3B8)        // Texto secundario
+val TextSubtle = Color(0xFF64748B)       // Etiquetas y placeholders
+val TextGhost = Color(0xFF475569)        // Marcas de agua y valores anteriores (ghost)
 
-val WarmFlame = Color(0xFFFF9500)        // Workout streak flame
-val WarmFlameContainer = Color(0xFFFFF7ED)
+// Compatibilidad con vistas previas
+val CreamBg = DarkBg
+val CreamSurface = DarkSurface
+val CreamSurfaceVariant = DarkSurfaceVariant
+val CreamBorder = DarkCardBorder
+val AccentCoral = AthleticOrange
+val AccentCoralDark = Color(0xFFDD5200)
+val AccentCoralContainer = Color(0x33FF6D00)
+val ElectricBlue = ElectricCyan
+val ElectricBlueDark = Color(0xFF00B0FF)
+val ElectricBlueContainer = Color(0x3300E5FF)
+val WarmFlame = AthleticOrange
+val WarmFlameContainer = Color(0x33FF6D00)
+val TextDark = TextWhite
+val TextDarkMuted = TextMuted
+val TextDarkSubtle = TextSubtle
 
-// Textos legados (para diálogos y componentes que los requieran)
-val TextWhite = Color(0xFFF8FAFC)
-val TextMuted = Color(0xFF94A3B8)
-val TextSubtle = Color(0xFF64748B)
-
-// Tipografía limpia de alto contraste en modo claro
-val TextDark = Color(0xFF1A1D23)
-val TextDarkMuted = Color(0xFF636A78)
-val TextDarkSubtle = Color(0xFF9CA3AF)
-
-// Estados
-val SuccessGreen = Color(0xFF22C55E)
-val WarningAmber = Color(0xFFF59E0B)
-val ErrorRed = Color(0xFFEF4444)
+val SecondaryEmerald = NeonMint
+val SecondaryEmeraldLight = NeonMintLight
+val AccentCyan = ElectricCyan
+val PrimaryIndigo = ElectricCyan
+val PrimaryIndigoLight = ElectricCyanLight
+val CreamBgWarm = DarkSurfaceVariant
+val AccentCoralLight = AthleticOrangeLight
+val ElectricBlueLight = ElectricCyanLight

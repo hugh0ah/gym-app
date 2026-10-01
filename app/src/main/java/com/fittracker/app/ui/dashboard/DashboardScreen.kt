@@ -54,6 +54,7 @@ fun DashboardScreen(
     smartScaleViewModel: SmartScaleViewModel,
     onNavigateToFood: () -> Unit,
     onNavigateToRoutine: () -> Unit,
+    onNavigateToSymmetry: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -295,6 +296,16 @@ fun DashboardScreen(
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                if (onNavigateToSymmetry != null) {
+                    WellnessActionPill(
+                        title = "Simetría Muscular",
+                        subtitle = "Mapa de calor",
+                        icon = Icons.Default.AccessibilityNew,
+                        accentColor = NeonMint,
+                        onClick = onNavigateToSymmetry
+                    )
+                }
+
                 WellnessActionPill(
                     title = "Anotar Peso",
                     subtitle = if (state.latestWeight != null) "${state.latestWeight?.weightKg} kg" else "Registrar",

@@ -29,6 +29,8 @@ import com.fittracker.app.data.local.entities.FoodLog
 import com.fittracker.app.ui.components.MacroProgressBar
 import com.fittracker.app.ui.theme.*
 
+import com.fittracker.app.ui.components.InteractiveMacroRing
+
 @Composable
 fun FoodScreen(
     viewModel: FoodViewModel,
@@ -108,62 +110,31 @@ fun FoodScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Resumen de macros del día
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(CreamSurface)
-                    .border(1.dp, CreamBorder, RoundedCornerShape(18.dp))
-                    .padding(14.dp)
+            // Anillo Interactivo de Calorías y Macronutrientes
+            InteractiveMacroRing(
+                caloriesConsumed = state.macroTotals.totalCalories,
+                caloriesTarget = state.userTargets.calorieTarget,
+                caloriesBurned = 0.0,
+                proteinConsumed = state.macroTotals.totalProtein,
+                proteinTarget = state.userTargets.proteinTarget,
+                carbsConsumed = state.macroTotals.totalCarbs,
+                carbsTarget = state.userTargets.carbTarget,
+                fatConsumed = state.macroTotals.totalFat,
+                fatTarget = state.userTargets.fatTarget
+            )
+
+            // Botón de ajuste de objetivos
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(text = "Total Consumido", color = TextDarkMuted, fontSize = 12.sp)
-                            Text(
-                                text = "${state.macroTotals.totalCalories.toInt()} / ${state.userTargets.calorieTarget.toInt()} kcal",
-                                color = TextDark,
-                                fontSize = 19.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        IconButton(
-                            onClick = { viewModel.openTargetsDialog() },
-                            modifier = Modifier
-                                .size(34.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(CreamSurfaceVariant)
-                        ) {
-                            Icon(Icons.Default.Tune, contentDescription = "Ajustar objetivos", tint = TextDark, modifier = Modifier.size(18.dp))
-                        }
-                    }
-
-                    MacroProgressBar(
-                        label = "Proteína",
-                        currentG = state.macroTotals.totalProtein,
-                        targetG = state.userTargets.proteinTarget,
-                        color = ProteinBlue
-                    )
-
-                    MacroProgressBar(
-                        label = "Carbohidratos",
-                        currentG = state.macroTotals.totalCarbs,
-                        targetG = state.userTargets.carbTarget,
-                        color = CarbsYellow
-                    )
-
-                    MacroProgressBar(
-                        label = "Grasas",
-                        currentG = state.macroTotals.totalFat,
-                        targetG = state.userTargets.fatTarget,
-                        color = FatPurple
-                    )
+                TextButton(
+                    onClick = { viewModel.openTargetsDialog() },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    Icon(Icons.Default.Tune, contentDescription = null, tint = ElectricCyan, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Editar Metas Nutricionales", color = ElectricCyan, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
 

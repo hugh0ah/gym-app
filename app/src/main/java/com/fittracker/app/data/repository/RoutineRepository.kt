@@ -63,6 +63,10 @@ class RoutineRepository(
         )
     }
 
+    suspend fun updateRoutineExerciseValues(id: Long, sets: Int, reps: Int, weight: Double) {
+        routineDao.updateRoutineExerciseValues(id, sets, reps, weight)
+    }
+
     suspend fun deleteRoutineExercise(id: Long) {
         routineDao.deleteRoutineExerciseById(id)
     }

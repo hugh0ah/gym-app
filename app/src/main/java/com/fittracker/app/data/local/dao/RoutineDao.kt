@@ -88,6 +88,9 @@ interface RoutineDao {
     @Update
     suspend fun updateRoutineExercise(routineExercise: RoutineExercise)
 
+    @Query("UPDATE routine_exercises SET sets = :sets, reps = :reps, weight = :weight WHERE id = :id")
+    suspend fun updateRoutineExerciseValues(id: Long, sets: Int, reps: Int, weight: Double)
+
     @Delete
     suspend fun deleteRoutineExercise(routineExercise: RoutineExercise)
 

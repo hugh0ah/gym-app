@@ -18,11 +18,12 @@ class ApiKeyManager(context: Context) {
         val buildKey = BuildConfig.GEMINI_API_KEY.trim()
 
         // Si la clave guardada en SharedPreferences está vacía, sincronizar con la clave de BuildConfig
-        if (storedKey.isBlank() && buildKey.isNotBlank()) {
+        if (storedKey.isBlank() && buildKey.isNotBlank() && !buildKey.contains("your_api_key")) {
             prefs.edit().putString(KEY_GEMINI, buildKey).apply()
             return buildKey
         }
-        return storedKey.ifBlank { buildKey }
+        val effective = storedKey.ifBlank { buildKey }
+        return if (effective.contains("your_api_key")) "" else effective
     }
 
     fun setApiKey(key: String) {

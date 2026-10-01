@@ -37,6 +37,7 @@ data class RoutineUiState(
     val workoutDates: Set<String> = emptySet(),
     val selectedExerciseForLog: RoutineExerciseWithDetails? = null,
     val selectedExerciseFor1RM: Exercise? = null,
+    val editingExercise: RoutineExerciseWithDetails? = null,
     val exerciseSearchQuery: String = "",
     val selectedMuscleFilter: String? = null
 )
@@ -287,7 +288,42 @@ class RoutineViewModel(
         }
     }
 
-    fun confirmWorkoutLog(actualSets: Int, actualReps: Int, actualWeight: Double, notes: String?) {
+    fun openEditExerciseDialog(exercise: RoutineExerciseWithDetails) {
+        _uiState.update { it.copy(editingExercise = exercise) }
+    }
+
+    fun closeEditExerciseDialog() {
+        _uiState.update { it.copy(editingExercise = null) }
+    }
+
+    fun updateRoutineExerciseValues(id: Long, sets: Int, reps: Int, weight: Double) {
+        viewModelScope.launch {
+            routineRepository.updateRoutineExerciseValues(id, sets.coerceAtLeast(1), reps.coerceAtLeast(1), weight.coerceAtLeast(0.0))
+            _uiState.update { it.copy(editingExercise = null) }
+        }
+    }
+
+    fun quickAdjustWeight(exercise: RoutineExerciseWithDetails, deltaWeight: Double) {
+        val newWeight = (exercise.weight + deltaWeight).coerceAtLeast(0.0)
+        viewModelScope.launch {
+            routineRepository.updateRoutineExerciseValues(exercise.id, exercise.sets, exercise.reps, newWeight)
+        }
+    }
+
+    fun quickAdjustReps(exercise: RoutineExerciseWithDetails, deltaReps: Int) {
+        val newReps = (exercise.reps + deltaReps).coerceAtLeast(1)
+        viewModelScope.launch {
+            routineRepository.updateRoutineExerciseValues(exercise.id, exercise.sets, newReps, exercise.weight)
+        }
+    }
+
+    fun confirmWorkoutLog(
+        actualSets: Int,
+        actualReps: Int,
+        actualWeight: Double,
+        notes: String?,
+        updateRoutineTargets: Boolean = true
+    ) {
         val exercise = _uiState.value.selectedExerciseForLog ?: return
         val today = LocalDate.now().toString()
 
@@ -301,6 +337,9 @@ class RoutineViewModel(
                 notes = notes,
                 routineExerciseId = exercise.id
             )
+            if (updateRoutineTargets) {
+                routineRepository.updateRoutineExerciseValues(exercise.id, actualSets, actualReps, actualWeight)
+            }
             _uiState.update { it.copy(workoutDates = it.workoutDates + today) }
             closeWorkoutLogger()
         }

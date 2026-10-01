@@ -32,10 +32,13 @@ import com.fittracker.app.data.local.entities.Exercise
 import com.fittracker.app.ui.components.*
 import com.fittracker.app.ui.theme.*
 
+import com.fittracker.app.ui.workout.LiveWorkoutViewModel
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoutineScreen(
     viewModel: RoutineViewModel,
+    liveWorkoutViewModel: LiveWorkoutViewModel? = null,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -225,6 +228,81 @@ fun RoutineScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            // Tarjeta de Acción: Iniciar Sesión en Vivo (Estilo Hevy / RP Hypertrophy)
+            val liveSession = liveWorkoutViewModel?.uiState?.collectAsState()?.value?.activeSession
+            Card(
+                colors = CardDefaults.cardColors(containerColor = DarkSurfaceElevated),
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, if (liveSession != null) NeonMint.copy(alpha = 0.6f) else DarkCardBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (liveSession != null) "Sesión Activa: ${liveSession.routineName}" else "Entrenamiento en Vivo",
+                            color = TextWhite,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = if (liveSession != null) "⏱ ${liveSession.elapsedSeconds / 60}m • ${liveSession.completedSetsCount}/${liveSession.totalSetsCount} series" else "${state.exercisesForDay.size} ejercicios • Registra series en vivo",
+                            color = if (liveSession != null) NeonMint else TextMuted,
+                            fontSize = 12.sp
+                        )
+                    }
+
+                    if (liveSession != null) {
+                        Button(
+                            onClick = { liveWorkoutViewModel.expandSheet() },
+                            colors = ButtonDefaults.buttonColors(containerColor = NeonMint),
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                        ) {
+                            Text("Abrir ⚡", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
+                    } else {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            OutlinedButton(
+                                onClick = { liveWorkoutViewModel?.startFreeWorkout() },
+                                shape = RoundedCornerShape(10.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextLight),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                            ) {
+                                Text("Libre", fontSize = 12.sp)
+                            }
+
+                            Button(
+                                onClick = {
+                                    val currentRoutineName = state.routines.find { it.id == state.selectedRoutineId }?.name ?: "Rutina de Hoy"
+                                    liveWorkoutViewModel?.startWorkoutFromRoutine(
+                                        routineName = currentRoutineName,
+                                        routineId = state.selectedRoutineId,
+                                        routineExercises = state.exercisesForDay
+                                    )
+                                },
+                                enabled = state.exercisesForDay.isNotEmpty(),
+                                colors = ButtonDefaults.buttonColors(containerColor = NeonMint),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Iniciar", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
             // Cabecera de ejercicios del día
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -339,6 +417,9 @@ fun RoutineScreen(
                         RoutineExerciseCard(
                             item = item,
                             onLogClick = { viewModel.openWorkoutLogger(item) },
+                            onEditClick = { viewModel.openEditExerciseDialog(item) },
+                            onQuickAdjustWeight = { delta -> viewModel.quickAdjustWeight(item, delta) },
+                            onQuickAdjustReps = { delta -> viewModel.quickAdjustReps(item, delta) },
                             onRestClick = { activeRestExercise = item },
                             on1RMClick = {
                                 active1RMWeight = if (item.weight > 0) item.weight else 80.0
@@ -438,10 +519,21 @@ fun RoutineScreen(
             WorkoutSessionLogDialog(
                 exercise = exToLog,
                 onDismiss = { viewModel.closeWorkoutLogger() },
-                onConfirm = { sets, reps, weight, notes ->
-                    viewModel.confirmWorkoutLog(sets, reps, weight, notes)
+                onConfirm = { sets, reps, weight, notes, updateRoutine ->
+                    viewModel.confirmWorkoutLog(sets, reps, weight, notes, updateRoutine)
                     // Abrir temporizador de descanso tras registrar la serie
                     activeRestExercise = exToLog
+                }
+            )
+        }
+
+        // Diálogo para editar los pesos y repeticiones del ejercicio en la rutina
+        state.editingExercise?.let { exToEdit ->
+            EditRoutineExerciseDialog(
+                exercise = exToEdit,
+                onDismiss = { viewModel.closeEditExerciseDialog() },
+                onSave = { sets, reps, weight ->
+                    viewModel.updateRoutineExerciseValues(exToEdit.id, sets, reps, weight)
                 }
             )
         }
@@ -521,6 +613,9 @@ private fun OpenGymToolChip(
 private fun RoutineExerciseCard(
     item: RoutineExerciseWithDetails,
     onLogClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onQuickAdjustWeight: (Double) -> Unit,
+    onQuickAdjustReps: (Int) -> Unit,
     onRestClick: () -> Unit,
     on1RMClick: () -> Unit,
     onPlateClick: () -> Unit,
@@ -586,6 +681,9 @@ private fun RoutineExerciseCard(
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onEditClick, modifier = Modifier.size(30.dp)) {
+                        Icon(Icons.Default.Edit, contentDescription = "Editar ejercicio", tint = NeonMint, modifier = Modifier.size(17.dp))
+                    }
                     IconButton(onClick = on1RMClick, modifier = Modifier.size(30.dp)) {
                         Icon(Icons.Default.Calculate, contentDescription = "1RM", tint = ElectricBlue, modifier = Modifier.size(17.dp))
                     }
@@ -637,10 +735,11 @@ private fun RoutineExerciseCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    TargetStatItem(label = "Series", value = "${item.sets}")
-                    TargetStatItem(label = "Reps", value = "${item.reps}")
-                    TargetStatItem(label = "Peso", value = "${item.weight} kg")
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    TargetStatItem(label = "Series", value = "${item.sets}", onClick = onEditClick)
+                    TargetStatItem(label = "Reps", value = "${item.reps}", onClick = onEditClick)
+                    val weightDisplay = if (item.weight % 1.0 == 0.0) "${item.weight.toInt()} kg" else "${item.weight} kg"
+                    TargetStatItem(label = "Peso", value = weightDisplay, onClick = onEditClick)
                 }
 
                 FilledTonalButton(
@@ -654,7 +753,30 @@ private fun RoutineExerciseCard(
                 ) {
                     Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Registrar Serie", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("Registrar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            // Fila de micro-ajustes rápidos (+2.5 kg, -2.5 kg, +1 rep, -1 rep)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    QuickAdjustPill(label = "-2.5kg", onClick = { onQuickAdjustWeight(-2.5) })
+                    QuickAdjustPill(label = "+2.5kg", onClick = { onQuickAdjustWeight(2.5) })
+                    QuickAdjustPill(label = "-1 rep", onClick = { onQuickAdjustReps(-1) })
+                    QuickAdjustPill(label = "+1 rep", onClick = { onQuickAdjustReps(1) })
+                }
+
+                TextButton(
+                    onClick = onEditClick,
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Icon(Icons.Default.Tune, contentDescription = null, tint = ElectricBlue, modifier = Modifier.size(13.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text("Editar", color = ElectricBlue, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -662,8 +784,31 @@ private fun RoutineExerciseCard(
 }
 
 @Composable
-private fun TargetStatItem(label: String, value: String) {
-    Column {
+private fun QuickAdjustPill(label: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(6.dp),
+        color = CreamSurfaceVariant,
+        border = androidx.compose.foundation.BorderStroke(1.dp, CreamBorder)
+    ) {
+        Text(
+            text = label,
+            color = TextDark,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+        )
+    }
+}
+
+@Composable
+private fun TargetStatItem(label: String, value: String, onClick: () -> Unit = {}) {
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 4.dp, vertical = 2.dp)
+    ) {
         Text(text = label, color = TextDarkMuted, fontSize = 11.sp)
         Text(text = value, color = TextDark, fontSize = 14.sp, fontWeight = FontWeight.Bold)
     }
@@ -868,25 +1013,30 @@ private fun AddExerciseToRoutineDialog(
 private fun WorkoutSessionLogDialog(
     exercise: RoutineExerciseWithDetails,
     onDismiss: () -> Unit,
-    onConfirm: (sets: Int, reps: Int, weight: Double, notes: String?) -> Unit
+    onConfirm: (sets: Int, reps: Int, weight: Double, notes: String?, updateRoutine: Boolean) -> Unit
 ) {
     var actualSets by remember { mutableStateOf(exercise.sets.toString()) }
     var actualReps by remember { mutableStateOf(exercise.reps.toString()) }
-    var actualWeight by remember { mutableStateOf(exercise.weight.toString()) }
+    var actualWeight by remember {
+        val wStr = if (exercise.weight % 1.0 == 0.0) exercise.weight.toInt().toString() else exercise.weight.toString()
+        mutableStateOf(wStr)
+    }
     var notes by remember { mutableStateOf("") }
+    var updateRoutineTargets by remember { mutableStateOf(true) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = CreamSurface,
+        containerColor = DarkSurfaceElevated,
+        shape = RoundedCornerShape(20.dp),
         title = {
             Column {
-                Text("Registrar Entrenamiento", color = TextDark, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Text(exercise.exerciseName, color = AccentCoralDark, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Text("Registrar Entrenamiento", color = TextWhite, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(exercise.exerciseName, color = NeonMint, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             }
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Introduce lo que levantaste realmente:", color = TextDarkMuted, fontSize = 12.sp)
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Introduce lo que levantaste hoy:", color = TextMuted, fontSize = 12.sp)
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
@@ -907,7 +1057,12 @@ private fun WorkoutSessionLogDialog(
                     )
                     OutlinedTextField(
                         value = actualWeight,
-                        onValueChange = { actualWeight = it },
+                        onValueChange = { input ->
+                            val clean = input.replace(',', '.')
+                            if (clean.count { it == '.' } <= 1 && clean.all { it.isDigit() || it == '.' }) {
+                                actualWeight = clean
+                            }
+                        },
                         label = { Text("Peso (kg)") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.weight(1.2f),
@@ -923,6 +1078,24 @@ private fun WorkoutSessionLogDialog(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
+
+                // Checkbox para sincronizar peso con la rutina
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.clickable { updateRoutineTargets = !updateRoutineTargets }
+                ) {
+                    Checkbox(
+                        checked = updateRoutineTargets,
+                        onCheckedChange = { updateRoutineTargets = it },
+                        colors = CheckboxDefaults.colors(checkedColor = NeonMint)
+                    )
+                    Text(
+                        text = "Actualizar peso y reps habituales de la rutina",
+                        color = TextLight,
+                        fontSize = 12.sp
+                    )
+                }
             }
         },
         confirmButton = {
@@ -930,18 +1103,223 @@ private fun WorkoutSessionLogDialog(
                 onClick = {
                     val s = actualSets.toIntOrNull() ?: exercise.sets
                     val r = actualReps.toIntOrNull() ?: exercise.reps
-                    val w = actualWeight.toDoubleOrNull() ?: exercise.weight
-                    onConfirm(s, r, w, notes.ifBlank { null })
+                    val w = actualWeight.replace(',', '.').toDoubleOrNull() ?: exercise.weight
+                    onConfirm(s, r, w, notes.ifBlank { null }, updateRoutineTargets)
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = AccentCoral),
+                colors = ButtonDefaults.buttonColors(containerColor = NeonMint),
                 shape = RoundedCornerShape(10.dp)
             ) {
-                Text("Guardar Serie", fontWeight = FontWeight.Bold)
+                Text("Guardar Serie", color = Color.Black, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar", color = TextDarkMuted)
+                Text("Cancelar", color = TextMuted)
+            }
+        }
+    )
+}
+
+@Composable
+private fun EditRoutineExerciseDialog(
+    exercise: RoutineExerciseWithDetails,
+    onDismiss: () -> Unit,
+    onSave: (sets: Int, reps: Int, weight: Double) -> Unit
+) {
+    var sets by remember { mutableStateOf(exercise.sets.toString()) }
+    var reps by remember { mutableStateOf(exercise.reps.toString()) }
+    var weight by remember {
+        val wStr = if (exercise.weight % 1.0 == 0.0) exercise.weight.toInt().toString() else exercise.weight.toString()
+        mutableStateOf(wStr)
+    }
+
+    val currentWeightDouble = weight.replace(',', '.').toDoubleOrNull() ?: exercise.weight
+    val currentRepsInt = reps.toIntOrNull() ?: exercise.reps
+
+    val estimated1RM = remember(currentWeightDouble, currentRepsInt) {
+        if (currentWeightDouble > 0 && currentRepsInt > 0) {
+            val calc = currentWeightDouble * (36.0 / (37.0 - currentRepsInt.coerceIn(1, 30)))
+            kotlin.math.round(calc * 10.0) / 10.0
+        } else 0.0
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = DarkSurfaceElevated,
+        shape = RoundedCornerShape(20.dp),
+        title = {
+            Column {
+                Text("Cambiar Peso y Repeticiones", color = TextWhite, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(exercise.exerciseName, color = NeonMint, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                // Selector de Series
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Series:", color = TextLight, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                val s = (sets.toIntOrNull() ?: exercise.sets) - 1
+                                if (s >= 1) sets = s.toString()
+                            },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) { Text("-1", color = TextLight, fontSize = 12.sp) }
+
+                        OutlinedTextField(
+                            value = sets,
+                            onValueChange = { if (it.all { c -> c.isDigit() }) sets = it },
+                            modifier = Modifier.width(60.dp),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            textStyle = LocalTextStyle.current.copy(textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold, color = TextWhite)
+                        )
+
+                        Button(
+                            onClick = {
+                                val s = (sets.toIntOrNull() ?: exercise.sets) + 1
+                                sets = s.toString()
+                            },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = DarkSurfaceVariant)
+                        ) { Text("+1", color = TextWhite, fontSize = 12.sp) }
+                    }
+                }
+
+                // Selector de Repeticiones
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Repeticiones:", color = TextLight, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                val r = (reps.toIntOrNull() ?: exercise.reps) - 1
+                                if (r >= 1) reps = r.toString()
+                            },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) { Text("-1", color = TextLight, fontSize = 12.sp) }
+
+                        OutlinedTextField(
+                            value = reps,
+                            onValueChange = { if (it.all { c -> c.isDigit() }) reps = it },
+                            modifier = Modifier.width(60.dp),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            textStyle = LocalTextStyle.current.copy(textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold, color = TextWhite)
+                        )
+
+                        Button(
+                            onClick = {
+                                val r = (reps.toIntOrNull() ?: exercise.reps) + 1
+                                reps = r.toString()
+                            },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = DarkSurfaceVariant)
+                        ) { Text("+1", color = TextWhite, fontSize = 12.sp) }
+                    }
+                }
+
+                // Selector de Peso (kg)
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Peso (kg):", color = TextLight, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        OutlinedTextField(
+                            value = weight,
+                            onValueChange = { input ->
+                                val clean = input.replace(',', '.')
+                                if (clean.count { it == '.' } <= 1 && clean.all { it.isDigit() || it == '.' }) {
+                                    weight = clean
+                                }
+                            },
+                            modifier = Modifier.width(100.dp),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            textStyle = LocalTextStyle.current.copy(textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.ExtraBold, color = NeonMint, fontSize = 16.sp)
+                        )
+                    }
+
+                    // Chips rápidos de incremento de peso
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        QuickAdjustPill(label = "-5kg", onClick = {
+                            val w = (currentWeightDouble - 5.0).coerceAtLeast(0.0)
+                            weight = if (w % 1.0 == 0.0) w.toInt().toString() else String.format(java.util.Locale.US, "%.1f", w)
+                        })
+                        QuickAdjustPill(label = "-2.5kg", onClick = {
+                            val w = (currentWeightDouble - 2.5).coerceAtLeast(0.0)
+                            weight = if (w % 1.0 == 0.0) w.toInt().toString() else String.format(java.util.Locale.US, "%.1f", w)
+                        })
+                        QuickAdjustPill(label = "+2.5kg", onClick = {
+                            val w = currentWeightDouble + 2.5
+                            weight = if (w % 1.0 == 0.0) w.toInt().toString() else String.format(java.util.Locale.US, "%.1f", w)
+                        })
+                        QuickAdjustPill(label = "+5kg", onClick = {
+                            val w = currentWeightDouble + 5.0
+                            weight = if (w % 1.0 == 0.0) w.toInt().toString() else String.format(java.util.Locale.US, "%.1f", w)
+                        })
+                    }
+                }
+
+                // 1RM estimado
+                if (estimated1RM > 0) {
+                    Surface(
+                        color = DarkSurfaceVariant,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("1RM Estimado:", color = TextMuted, fontSize = 12.sp)
+                            Text("${estimated1RM.toInt()} kg", color = ElectricCyan, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val s = sets.toIntOrNull() ?: exercise.sets
+                    val r = reps.toIntOrNull() ?: exercise.reps
+                    val w = weight.replace(',', '.').toDoubleOrNull() ?: exercise.weight
+                    onSave(s, r, w)
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = NeonMint),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text("Guardar Cambios", color = Color.Black, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar", color = TextMuted)
             }
         }
     )

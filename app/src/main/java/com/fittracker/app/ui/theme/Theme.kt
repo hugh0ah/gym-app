@@ -1,38 +1,44 @@
 package com.fittracker.app.ui.theme
 
 import android.app.Activity
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val WellnessColorScheme = lightColorScheme(
-    primary = AccentCoral,
-    onPrimary = CreamSurface,
-    primaryContainer = AccentCoralContainer,
-    onPrimaryContainer = AccentCoralDark,
-    secondary = ElectricBlue,
-    onSecondary = CreamSurface,
-    secondaryContainer = ElectricBlueContainer,
-    onSecondaryContainer = ElectricBlueDark,
-    tertiary = WarmFlame,
-    onTertiary = TextDark,
-    background = CreamBg,
-    onBackground = TextDark,
-    surface = CreamSurface,
-    onSurface = TextDark,
-    surfaceVariant = CreamSurfaceVariant,
-    onSurfaceVariant = TextDarkMuted,
-    outline = CreamBorder,
-    error = ErrorRed,
-    onError = CreamSurface
+private val EliteDarkColorScheme = darkColorScheme(
+    primary = NeonMint,
+    onPrimary = Color(0xFF04140B),
+    primaryContainer = Color(0xFF00381B),
+    onPrimaryContainer = NeonMintLight,
+    secondary = ElectricCyan,
+    onSecondary = Color(0xFF001B26),
+    secondaryContainer = Color(0xFF00344D),
+    onSecondaryContainer = ElectricCyanLight,
+    tertiary = AthleticOrange,
+    onTertiary = Color(0xFF2E1000),
+    background = DarkBg,
+    onBackground = TextWhite,
+    surface = DarkSurface,
+    onSurface = TextWhite,
+    surfaceVariant = DarkSurfaceVariant,
+    onSurfaceVariant = TextMuted,
+    surfaceContainer = DarkSurfaceElevated,
+    surfaceContainerHigh = DarkSurfaceElevated,
+    outline = DarkCardBorder,
+    outlineVariant = DarkCardBorderSubtle,
+    error = AlertRed,
+    onError = Color.White
 )
 
 @Composable
 fun FitTrackerTheme(
+    darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val view = LocalView.current
@@ -40,18 +46,18 @@ fun FitTrackerTheme(
         SideEffect {
             val window = (view.context as? Activity)?.window
             if (window != null) {
-                window.statusBarColor = CreamBg.toArgb()
-                window.navigationBarColor = CreamBg.toArgb()
+                window.statusBarColor = DarkBg.toArgb()
+                window.navigationBarColor = DarkBg.toArgb()
                 WindowCompat.getInsetsController(window, view).apply {
-                    isAppearanceLightStatusBars = true
-                    isAppearanceLightNavigationBars = true
+                    isAppearanceLightStatusBars = false
+                    isAppearanceLightNavigationBars = false
                 }
             }
         }
     }
 
     MaterialTheme(
-        colorScheme = WellnessColorScheme,
+        colorScheme = EliteDarkColorScheme,
         typography = Typography,
         content = content
     )

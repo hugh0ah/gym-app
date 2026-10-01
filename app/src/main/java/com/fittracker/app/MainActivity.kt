@@ -13,9 +13,11 @@ import com.fittracker.app.ui.food.FoodViewModel
 import com.fittracker.app.ui.navigation.AppNavigation
 import com.fittracker.app.ui.routine.RoutineViewModel
 import com.fittracker.app.ui.scale.SmartScaleViewModel
+import com.fittracker.app.ui.symmetry.SymmetryViewModel
 import com.fittracker.app.ui.theme.FitTrackerTheme
 import com.fittracker.app.ui.wearable.WearableViewModel
 import com.fittracker.app.ui.weight.WeightViewModel
+import com.fittracker.app.ui.workout.LiveWorkoutViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -41,6 +43,23 @@ class MainActivity : ComponentActivity() {
             RoutineViewModel(
                 routineRepository = app.routineRepository,
                 exerciseRepository = app.exerciseRepository
+            )
+        }
+    }
+
+    private val liveWorkoutViewModel: LiveWorkoutViewModel by viewModels {
+        viewModelFactory {
+            LiveWorkoutViewModel(
+                routineRepository = app.routineRepository,
+                exerciseRepository = app.exerciseRepository
+            )
+        }
+    }
+
+    private val symmetryViewModel: SymmetryViewModel by viewModels {
+        viewModelFactory {
+            SymmetryViewModel(
+                routineRepository = app.routineRepository
             )
         }
     }
@@ -100,6 +119,8 @@ class MainActivity : ComponentActivity() {
                 AppNavigation(
                     dashboardViewModel = dashboardViewModel,
                     routineViewModel = routineViewModel,
+                    liveWorkoutViewModel = liveWorkoutViewModel,
+                    symmetryViewModel = symmetryViewModel,
                     foodViewModel = foodViewModel,
                     assistantViewModel = assistantViewModel,
                     wearableViewModel = wearableViewModel,
@@ -115,6 +136,7 @@ class MainActivity : ComponentActivity() {
         dashboardViewModel.checkAndSyncDate()
         foodViewModel.checkAndSyncDate()
         routineViewModel.checkAndSyncDate()
+        symmetryViewModel.loadSymmetryData()
     }
 }
 

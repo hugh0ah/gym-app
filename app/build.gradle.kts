@@ -1,40 +1,38 @@
-import java.util.Properties
-import java.io.FileInputStream
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.secrets)
 }
-
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localProperties.load(FileInputStream(localPropertiesFile))
-}
-
-val geminiApiKey: String = localProperties.getProperty("GEMINI_API_KEY")
-    ?: System.getenv("GEMINI_API_KEY")
-    ?: ""
 
 android {
     namespace = "com.fittracker.app"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.fittracker.app"
+        applicationId = "com.aistudio.fittracker.kxmpzq"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
 
-        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
+    signingConfigs {
+        create("debugConfig") {
+            storeFile = file("${rootDir}/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("debugConfig")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -54,6 +52,11 @@ android {
         compose = true
         buildConfig = true
     }
+}
+
+secrets {
+    propertiesFileName = ".env"
+    defaultPropertiesFileName = ".env.example"
 }
 
 dependencies {

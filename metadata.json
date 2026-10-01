@@ -1,0 +1,6 @@
+{
+  "name": "FitDay",
+  "description": "Fitness, gym workout and nutrition tracker with intelligent assistant and biometric analysis",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
