@@ -119,7 +119,11 @@ class WearableViewModel(
         }
     }
 
+    fun prepareForDate(targetDate: String = LocalDate.now().toString()) {
+        _uiState.value = WearableUiState(inputDate = targetDate)
+    }
+
     fun reset() {
-        _uiState.value = WearableUiState()
+        _uiState.value = WearableUiState(inputDate = LocalDate.now().toString())
     }
 }

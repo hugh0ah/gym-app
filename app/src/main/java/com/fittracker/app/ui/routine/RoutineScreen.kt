@@ -416,10 +416,10 @@ fun RoutineScreen(
             )
         }
 
-        // Diálogo de Volumen Muscular Semanal (OpenGym)
+        // Diálogo de volumen calculado con todos los días de la rutina seleccionada.
         if (state.isMuscleVolumeDialogOpen) {
             MuscleVolumeDialog(
-                routineExercises = state.exercisesForDay,
+                routineExercises = state.routineExercises,
                 onDismiss = { viewModel.closeMuscleVolumeDialog() }
             )
         }

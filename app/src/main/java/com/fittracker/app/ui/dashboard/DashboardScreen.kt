@@ -105,8 +105,9 @@ fun DashboardScreen(
                         fontSize = 24.sp,
                         fontWeight = FontWeight.ExtraBold
                     )
+                    val dateHeaderSubtitle = if (state.isViewingToday) "Hoy, ${state.date}" else state.date
                     Text(
-                        text = "Hoy, ${state.date} • ${if (state.userProfile.gender.equals("FEMALE", ignoreCase = true)) "Mujer" else "Hombre"}, ${state.userProfile.weightKg} kg",
+                        text = "$dateHeaderSubtitle • ${if (state.userProfile.gender.equals("FEMALE", ignoreCase = true)) "Mujer" else "Hombre"}, ${state.userProfile.weightKg} kg",
                         color = TextDarkMuted,
                         fontSize = 12.sp
                     )
@@ -172,6 +173,81 @@ fun DashboardScreen(
             }
 
             // ==========================================
+            // SELECTOR DE FECHA (DÍA ANTERIOR / SIGUIENTE / HOY)
+            // ==========================================
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = CreamSurface,
+                border = BorderStroke(1.dp, CreamBorder),
+                shadowElevation = 1.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { viewModel.changeDate(-1) },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(Icons.Default.ChevronLeft, contentDescription = "Día anterior", tint = TextDark)
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = null,
+                            tint = AccentCoral,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        val todayStr = java.time.LocalDate.now().toString()
+                        val yesterdayStr = java.time.LocalDate.now().minusDays(1).toString()
+                        val tomorrowStr = java.time.LocalDate.now().plusDays(1).toString()
+                        val dateLabel = when (state.date) {
+                            todayStr -> "Hoy, ${state.date}"
+                            yesterdayStr -> "Ayer, ${state.date}"
+                            tomorrowStr -> "Mañana, ${state.date}"
+                            else -> state.date
+                        }
+                        Text(
+                            text = dateLabel,
+                            color = TextDark,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (!state.isViewingToday) {
+                            Surface(
+                                onClick = { viewModel.selectToday() },
+                                shape = RoundedCornerShape(8.dp),
+                                color = AccentCoralContainer
+                            ) {
+                                Text(
+                                    text = "Ir a Hoy",
+                                    color = AccentCoralDark,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    IconButton(
+                        onClick = { viewModel.changeDate(1) },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(Icons.Default.ChevronRight, contentDescription = "Día siguiente", tint = TextDark)
+                    }
+                }
+            }
+
+            // ==========================================
             // 1. WEEKLY ACTIVITY SUMMARY AT TOP (COMPACT)
             // ==========================================
             WeeklyActivitySummaryCard(
@@ -179,7 +255,9 @@ fun DashboardScreen(
                 completedCount = state.weeklyCompletedCount,
                 targetDays = state.weeklyTargetDays,
                 totalMinutes = state.weeklyTotalMinutes,
-                todaySteps = state.steps
+                todaySteps = state.steps,
+                selectedDate = state.date,
+                onSelectDay = { viewModel.selectDate(it) }
             )
 
             // ==========================================
@@ -280,7 +358,8 @@ fun DashboardScreen(
                     subtitle = if (state.steps >= 10000) "¡Meta superada! 🎉" else "Objetivo: 10.000",
                     icon = Icons.Default.DirectionsWalk,
                     iconColor = StepsTeal,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onClick = { viewModel.openWearableDialog() }
                 )
 
                 StatCard(
@@ -303,12 +382,11 @@ fun DashboardScreen(
                 shadowElevation = 2.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -344,28 +422,33 @@ fun DashboardScreen(
                         }
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         FilledTonalButton(
                             onClick = { viewModel.addWater(250) },
-                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = ElectricBlue.copy(alpha = 0.12f),
                                 contentColor = ElectricBlue
                             ),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                            contentPadding = PaddingValues(vertical = 8.dp)
                         ) {
-                            Text("+250ml", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text("+250 ml", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                         FilledTonalButton(
                             onClick = { viewModel.addWater(500) },
-                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = ElectricBlue.copy(alpha = 0.12f),
                                 contentColor = ElectricBlue
                             ),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                            contentPadding = PaddingValues(vertical = 8.dp)
                         ) {
-                            Text("+500ml", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text("+500 ml", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -522,6 +605,9 @@ fun DashboardScreen(
 
         // Diálogo de importación de wearable (Huawei Watch Fit 3)
         if (state.isWearableDialogVisible) {
+            LaunchedEffect(state.date) {
+                wearableViewModel.prepareForDate(state.date)
+            }
             WearableImportDialog(
                 viewModel = wearableViewModel,
                 onDismiss = {
@@ -569,7 +655,9 @@ private fun WeeklyActivitySummaryCard(
     completedCount: Int,
     targetDays: Int,
     totalMinutes: Int,
-    todaySteps: Int
+    todaySteps: Int,
+    selectedDate: String = "",
+    onSelectDay: (String) -> Unit = {}
 ) {
     Surface(
         shape = RoundedCornerShape(22.dp),
@@ -619,22 +707,28 @@ private fun WeeklyActivitySummaryCard(
                 }
             }
 
-            // Fila de 7 días compacta
+            // Fila de 7 días compacta e interactiva
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 weeklyActivity.forEach { day ->
+                    val isCurrentSelection = day.date == selectedDate
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isCurrentSelection) AccentCoralContainer.copy(alpha = 0.5f) else Color.Transparent)
+                            .clickable { onSelectDay(day.date) }
+                            .padding(horizontal = 5.dp, vertical = 4.dp)
                     ) {
                         Text(
                             text = day.dayKey,
                             fontSize = 11.sp,
-                            fontWeight = if (day.isToday) FontWeight.ExtraBold else FontWeight.Medium,
-                            color = if (day.isToday) AccentCoral else TextDarkMuted
+                            fontWeight = if (day.isToday || isCurrentSelection) FontWeight.ExtraBold else FontWeight.Medium,
+                            color = if (day.isToday) AccentCoral else if (isCurrentSelection) TextDark else TextDarkMuted
                         )
 
                         Box(
@@ -649,8 +743,11 @@ private fun WeeklyActivitySummaryCard(
                                     }
                                 )
                                 .then(
-                                    if (day.isToday) Modifier.border(1.5.dp, AccentCoral, CircleShape)
-                                    else Modifier
+                                    when {
+                                        isCurrentSelection -> Modifier.border(2.dp, AccentCoralDark, CircleShape)
+                                        day.isToday -> Modifier.border(1.5.dp, AccentCoral, CircleShape)
+                                        else -> Modifier
+                                    }
                                 ),
                             contentAlignment = Alignment.Center
                         ) {

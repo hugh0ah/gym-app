@@ -53,6 +53,22 @@ interface WorkoutLogDao {
     """)
     suspend fun getAllWorkoutHistorySince(sinceDate: String): List<WorkoutLogWithExercise>
 
+    @Query("""
+        SELECT wl.id, wl.routineExerciseId, wl.exerciseId, wl.date, wl.actualSets, wl.actualReps,
+               wl.actualWeight, wl.notes, e.name AS exerciseName, e.muscleGroup
+        FROM workout_logs wl
+        INNER JOIN exercises e ON wl.exerciseId = e.id
+        WHERE wl.date >= :sinceDate
+        ORDER BY wl.date ASC, wl.id ASC
+    """)
+    fun getAllWorkoutHistorySinceFlow(sinceDate: String): Flow<List<WorkoutLogWithExercise>>
+
+    @Query("SELECT DISTINCT date FROM workout_logs WHERE date >= :sinceDate ORDER BY date ASC")
+    fun getWorkoutDatesSinceFlow(sinceDate: String): Flow<List<String>>
+
+    @Query("SELECT DISTINCT date FROM workout_logs ORDER BY date ASC")
+    fun getAllWorkoutDatesFlow(): Flow<List<String>>
+
     @Query("SELECT COUNT(*) FROM workout_logs WHERE date = :date")
     fun getWorkoutCountForDate(date: String): Flow<Int>
 

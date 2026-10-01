@@ -21,6 +21,15 @@ class ActivityRepository(
         return dailyActivitySummaryDao.getActivityHistorySince(sinceDate)
     }
 
+    fun getActivityHistoryFlow(weeks: Int): Flow<List<DailyActivitySummary>> {
+        val sinceDate = LocalDate.now().minusWeeks(weeks.toLong()).toString()
+        return dailyActivitySummaryDao.getActivityHistorySinceFlow(sinceDate)
+    }
+
+    fun getAllActivitiesFlow(): Flow<List<DailyActivitySummary>> {
+        return dailyActivitySummaryDao.getAllActivitiesFlow()
+    }
+
     suspend fun clearAllActivities() {
         dailyActivitySummaryDao.deleteAll()
     }

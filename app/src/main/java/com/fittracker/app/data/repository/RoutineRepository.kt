@@ -110,6 +110,19 @@ class RoutineRepository(
         return workoutLogDao.getAllWorkoutHistorySince(sinceDate)
     }
 
+    fun getAllWorkoutHistorySinceFlow(sinceDate: String): Flow<List<WorkoutLogWithExercise>> {
+        return workoutLogDao.getAllWorkoutHistorySinceFlow(sinceDate)
+    }
+
+    fun getWorkoutDatesSinceFlow(weeks: Int): Flow<List<String>> {
+        val sinceDate = LocalDate.now().minusWeeks(weeks.toLong()).toString()
+        return workoutLogDao.getWorkoutDatesSinceFlow(sinceDate)
+    }
+
+    fun getAllWorkoutDatesFlow(): Flow<List<String>> {
+        return workoutLogDao.getAllWorkoutDatesFlow()
+    }
+
     /**
      * Aplica la propuesta sugerida por la IA tras la confirmación explícita del usuario.
      */

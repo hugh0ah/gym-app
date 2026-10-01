@@ -80,11 +80,32 @@ class FoodViewModel(
         }
     }
 
+    private var lastKnownToday = LocalDate.now().toString()
+
+    fun checkAndSyncDate() {
+        val today = LocalDate.now().toString()
+        if (today != lastKnownToday) {
+            val wasOnOldToday = (_uiState.value.selectedDate == lastKnownToday)
+            lastKnownToday = today
+            if (wasOnOldToday) {
+                selectDate(today)
+            }
+        }
+    }
+
+    fun selectDate(date: String) {
+        _uiState.update { it.copy(selectedDate = date) }
+        observeDateData(date)
+    }
+
+    fun selectToday() {
+        selectDate(LocalDate.now().toString())
+    }
+
     fun changeDate(offsetDays: Long) {
-        val current = LocalDate.parse(_uiState.value.selectedDate)
+        val current = try { LocalDate.parse(_uiState.value.selectedDate) } catch (_: Exception) { LocalDate.now() }
         val newDate = current.plusDays(offsetDays).toString()
-        _uiState.update { it.copy(selectedDate = newDate) }
-        observeDateData(newDate)
+        selectDate(newDate)
     }
 
     fun addWater(amountMl: Int) {

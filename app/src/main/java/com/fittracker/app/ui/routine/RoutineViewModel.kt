@@ -19,8 +19,10 @@ import java.time.LocalDate
 data class RoutineUiState(
     val routines: List<Routine> = emptyList(),
     val selectedRoutineId: Long? = null,
-    val selectedDayOfWeek: Int = 1, // 1 = Lunes .. 7 = Domingo
+    val selectedDayOfWeek: Int = try { LocalDate.now().dayOfWeek.value } catch (_: Exception) { 1 }, // 1 = Lunes .. 7 = Domingo
     val exercisesForDay: List<RoutineExerciseWithDetails> = emptyList(),
+    /** Todos los ejercicios programados de la rutina, para el análisis semanal. */
+    val routineExercises: List<RoutineExerciseWithDetails> = emptyList(),
     val allExercises: List<Exercise> = emptyList(),
     val isAddExerciseDialogOpen: Boolean = false,
     val isLogWorkoutDialogOpen: Boolean = false,
@@ -48,6 +50,7 @@ class RoutineViewModel(
     val uiState: StateFlow<RoutineUiState> = _uiState.asStateFlow()
 
     private var exercisesJob: Job? = null
+    private var routineExercisesJob: Job? = null
 
     init {
         // Observar lista de rutinas
@@ -63,6 +66,7 @@ class RoutineViewModel(
                 val currentSelectedId = _uiState.value.selectedRoutineId
                 if (currentSelectedId != null) {
                     observeExercises(currentSelectedId, _uiState.value.selectedDayOfWeek)
+                    observeRoutineExercises(currentSelectedId)
                 }
             }
         }
@@ -95,7 +99,33 @@ class RoutineViewModel(
         }
     }
 
+    private fun observeRoutineExercises(routineId: Long) {
+        routineExercisesJob?.cancel()
+        routineExercisesJob = viewModelScope.launch {
+            routineRepository.getRoutineExercises(routineId).collect { exercises ->
+                _uiState.update { it.copy(routineExercises = exercises) }
+            }
+        }
+    }
+
+    private var userManuallyChangedDay = false
+
+    fun checkAndSyncDate() {
+        if (!userManuallyChangedDay) {
+            val todayDay = try { LocalDate.now().dayOfWeek.value } catch (_: Exception) { 1 }
+            if (todayDay != _uiState.value.selectedDayOfWeek) {
+                _uiState.update { it.copy(selectedDayOfWeek = todayDay) }
+                val routineId = _uiState.value.selectedRoutineId
+                if (routineId != null) {
+                    observeExercises(routineId, todayDay)
+                }
+            }
+        }
+        loadWorkoutDates()
+    }
+
     fun selectDay(day: Int) {
+        userManuallyChangedDay = true
         _uiState.update { it.copy(selectedDayOfWeek = day) }
         val routineId = _uiState.value.selectedRoutineId
         if (routineId != null) {
@@ -106,6 +136,7 @@ class RoutineViewModel(
     fun selectRoutine(id: Long) {
         _uiState.update { it.copy(selectedRoutineId = id) }
         observeExercises(id, _uiState.value.selectedDayOfWeek)
+        observeRoutineExercises(id)
     }
 
     fun openCreateRoutineDialog() {

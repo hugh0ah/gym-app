@@ -68,15 +68,37 @@ fun FoodScreen(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(Icons.Default.CalendarToday, contentDescription = null, tint = AccentCoral, modifier = Modifier.size(18.dp))
+                    val todayStr = java.time.LocalDate.now().toString()
+                    val yesterdayStr = java.time.LocalDate.now().minusDays(1).toString()
+                    val dateLabel = when (state.selectedDate) {
+                        todayStr -> "Hoy, ${state.selectedDate}"
+                        yesterdayStr -> "Ayer, ${state.selectedDate}"
+                        else -> state.selectedDate
+                    }
                     Text(
-                        text = state.selectedDate,
+                        text = dateLabel,
                         color = TextDark,
-                        fontSize = 17.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
+                    if (state.selectedDate != todayStr) {
+                        Surface(
+                            onClick = { viewModel.selectToday() },
+                            shape = RoundedCornerShape(8.dp),
+                            color = AccentCoralContainer
+                        ) {
+                            Text(
+                                text = "Ir a Hoy",
+                                color = AccentCoralDark,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
+                    }
                 }
 
                 IconButton(onClick = { viewModel.changeDate(1) }) {

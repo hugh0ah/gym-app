@@ -18,6 +18,12 @@ interface DailyActivitySummaryDao {
     @Query("SELECT * FROM daily_activity_summary WHERE date >= :sinceDate ORDER BY date ASC")
     suspend fun getActivityHistorySince(sinceDate: String): List<DailyActivitySummary>
 
+    @Query("SELECT * FROM daily_activity_summary WHERE date >= :sinceDate ORDER BY date ASC")
+    fun getActivityHistorySinceFlow(sinceDate: String): Flow<List<DailyActivitySummary>>
+
+    @Query("SELECT * FROM daily_activity_summary ORDER BY date ASC")
+    fun getAllActivitiesFlow(): Flow<List<DailyActivitySummary>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertActivitySummary(summary: DailyActivitySummary)
 

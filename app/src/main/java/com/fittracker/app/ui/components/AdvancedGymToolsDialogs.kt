@@ -426,28 +426,40 @@ fun MuscleVolumeDialog(
     routineExercises: List<RoutineExerciseWithDetails>,
     onDismiss: () -> Unit
 ) {
-    // Agrupar y calcular series semanales estimadas por grupo muscular
-    val volumeByGroup = remember(routineExercises) {
-        val map = mutableMapOf(
-            "Pecho" to 0,
-            "Espalda" to 0,
-            "Piernas" to 0,
-            "Hombros" to 0,
-            "Brazos" to 0,
-            "Core" to 0
+    data class MuscleVolume(val name: String, val minimum: Int, val optimal: Int, val maximum: Int)
+
+    // Rangos semanales orientativos de series efectivas por grupo muscular.
+    val muscleTargets = remember {
+        listOf(
+            MuscleVolume("Pecho", 8, 12, 20),
+            MuscleVolume("Espalda", 10, 14, 22),
+            MuscleVolume("Cuádriceps", 8, 12, 18),
+            MuscleVolume("Isquios y glúteos", 8, 12, 18),
+            MuscleVolume("Hombros", 8, 12, 18),
+            MuscleVolume("Bíceps", 6, 10, 16),
+            MuscleVolume("Tríceps", 6, 10, 16),
+            MuscleVolume("Core", 6, 10, 16),
+            MuscleVolume("Gemelos", 6, 10, 16)
         )
-        routineExercises.forEach { ex ->
-            val mg = ex.muscleGroup.lowercase()
-            val sets = ex.sets
-            when {
-                mg.contains("pecho") || mg.contains("chest") -> map["Pecho"] = (map["Pecho"] ?: 0) + sets
-                mg.contains("espalda") || mg.contains("back") || mg.contains("lats") -> map["Espalda"] = (map["Espalda"] ?: 0) + sets
-                mg.contains("pierna") || mg.contains("leg") || mg.contains("glute") || mg.contains("quad") -> map["Piernas"] = (map["Piernas"] ?: 0) + sets
-                mg.contains("hombro") || mg.contains("shoulder") || mg.contains("delt") -> map["Hombros"] = (map["Hombros"] ?: 0) + sets
-                mg.contains("brazo") || mg.contains("arm") || mg.contains("bicep") || mg.contains("tricep") -> map["Brazos"] = (map["Brazos"] ?: 0) + sets
-                mg.contains("core") || mg.contains("abs") || mg.contains("abdomen") -> map["Core"] = (map["Core"] ?: 0) + sets
-                else -> map["Pecho"] = (map["Pecho"] ?: 0) + sets
+    }
+    val volumeByGroup = remember(routineExercises) {
+        val map = muscleTargets.associate { it.name to 0 }.toMutableMap()
+        routineExercises.forEach { exercise ->
+            val muscle = exercise.muscleGroup.lowercase()
+            val sets = exercise.sets.coerceAtLeast(0)
+            val group = when {
+                muscle.contains("pecho") || muscle.contains("chest") -> "Pecho"
+                muscle.contains("espalda") || muscle.contains("back") || muscle.contains("lat") || muscle.contains("trap") -> "Espalda"
+                muscle.contains("quad") || muscle.contains("cuádr") || muscle.contains("cuadr") -> "Cuádriceps"
+                muscle.contains("isquio") || muscle.contains("hamstring") || muscle.contains("glute") || muscle.contains("femoral") -> "Isquios y glúteos"
+                muscle.contains("gemelo") || muscle.contains("calf") -> "Gemelos"
+                muscle.contains("hombro") || muscle.contains("shoulder") || muscle.contains("delt") -> "Hombros"
+                muscle.contains("bicep") || muscle.contains("bícep") -> "Bíceps"
+                muscle.contains("tricep") || muscle.contains("trícep") -> "Tríceps"
+                muscle.contains("core") || muscle.contains("abs") || muscle.contains("abdomen") -> "Core"
+                else -> null
             }
+            group?.let { map[it] = (map[it] ?: 0) + sets }
         }
         map
     }
@@ -499,7 +511,7 @@ fun MuscleVolumeDialog(
                     }
                 }
 
-                // Leyenda de referencia científica
+                // Leyenda de referencia adaptada al rango individual de cada músculo.
                 Card(
                     colors = CardDefaults.cardColors(containerColor = CreamBg),
                     shape = RoundedCornerShape(14.dp),
@@ -511,20 +523,22 @@ fun MuscleVolumeDialog(
                             .padding(12.dp),
                         horizontalArrangement = Arrangement.SpaceAround
                     ) {
-                        VolumeLegendItem(color = WarningAmber, label = "<10", desc = "Mantenimiento")
-                        VolumeLegendItem(color = SecondaryEmerald, label = "10-20", desc = "Óptimo Hipertrofia")
-                        VolumeLegendItem(color = AccentCoral, label = ">20", desc = "Alto Volumen")
+                        VolumeLegendItem(color = WarningAmber, label = "< mínimo", desc = "Subir series")
+                        VolumeLegendItem(color = SecondaryEmerald, label = "Objetivo", desc = "Crecimiento")
+                        VolumeLegendItem(color = AccentCoral, label = "> máximo", desc = "Vigilar fatiga")
                     }
                 }
 
-                // Barras de progreso por grupo muscular
-                volumeByGroup.forEach { (group, sets) ->
-                    val progress = (sets / 24f).coerceIn(0f, 1f)
+                // Barras de progreso con rangos semanales específicos por músculo.
+                muscleTargets.forEach { target ->
+                    val sets = volumeByGroup[target.name] ?: 0
+                    val progress = (sets / target.maximum.toFloat()).coerceIn(0f, 1f)
                     val (statusColor, statusText) = when {
-                        sets < 10 -> Pair(WarningAmber, "Volumen Bajo / Mantenimiento")
-                        sets <= 20 -> Pair(SecondaryEmerald, "Rango Óptimo de Crecimiento")
-                        else -> Pair(AccentCoral, "Volumen Máximo Recuperable")
+                        sets < target.minimum -> Pair(WarningAmber, "Por debajo del mínimo (${target.minimum}–${target.maximum} series)")
+                        sets <= target.maximum -> Pair(SecondaryEmerald, "Rango de crecimiento (${target.minimum}–${target.maximum} series)")
+                        else -> Pair(AccentCoral, "Por encima del máximo (${target.maximum}+ series): vigila la recuperación")
                     }
+                    val group = target.name
 
                     Card(
                         colors = CardDefaults.cardColors(containerColor = CreamBg),

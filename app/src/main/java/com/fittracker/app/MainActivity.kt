@@ -109,6 +109,13 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        dashboardViewModel.checkAndSyncDate()
+        foodViewModel.checkAndSyncDate()
+        routineViewModel.checkAndSyncDate()
+    }
 }
 
 @Suppress("UNCHECKED_CAST")
